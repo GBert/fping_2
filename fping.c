@@ -241,6 +241,7 @@ typedef struct host_entry
      int                  min_reply_i;        /* shortest response time */
      int                  total_time_i;       /* sum of response times */
      int                  *resp_times;        /* individual response times */
+     int                  tos;                /* individual tos value */
 #if defined( DEBUG ) || defined( _DEBUG )
      int                  *sent_times;        /* per-sent-ping timestamp */
 #endif /* DEBUG || _DEBUG */
@@ -386,6 +387,7 @@ int main( int argc, char **argv )
 	int advance;
 	struct protoent *proto;
 	char *buf;
+	int tos=0;
 	uid_t uid;
 
 	/* check if we are root */
@@ -424,7 +426,7 @@ int main( int argc, char **argv )
 
 	/* get command line options */
 
-	while( ( c = getopt( argc, argv, "gedhlmnqusaAvz:t:i:p:f:r:c:b:C:Q:B:" ) ) != EOF )
+	while( ( c = getopt( argc, argv, "gedhlmnqusaAvz:t:i:p:f:r:c:b:C:Q:B:O:" ) ) != EOF )
 	{
 		switch( c )
 		{
@@ -475,6 +477,14 @@ int main( int argc, char **argv )
 
 		case 'h':
 			usage();
+			break;
+
+		case 'O':
+			if( !( tos = ( u_int )atoi( optarg ) ) )
+				usage();
+			if ( setsockopt(s, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) ) {
+				perror("setting type of service octet IP_TOS");
+			}
 			break;
 
 		case 'q':
@@ -1614,6 +1624,7 @@ int wait_for_reply( void )
 	sum_replies += this_reply;
 	h->total_time += this_reply;
 	h->total_time_i += this_reply;
+	h->tos = ip->ip_tos;
 	total_replies++;
 	
 	/* note reply time in array, probably */
@@ -1656,7 +1667,7 @@ int wait_for_reply( void )
 			printf( "%s", h->host );
 
 			if( verbose_flag )
-				printf( " is alive" );
+				printf( " is alive (TOS %d)", h->tos );
 
 			if( elapsed_flag )
 				printf( " (%s ms)", sprint_tm( this_reply ) );
@@ -2510,6 +2521,7 @@ void usage( void )
 	fprintf( stderr, "   -l         loop sending pings forever\n" );
 	fprintf( stderr, "   -m         ping multiple interfaces on target host\n" );
 	fprintf( stderr, "   -n         show targets by name (-d is equivalent)\n" );
+	fprintf( stderr, "   -O n       set the type of service (tos) flag on the ICMP packets\n" );
 	fprintf( stderr, "   -p n       interval between ping packets to one target (in millisec)\n" );
 	fprintf( stderr, "                (in looping and counting modes, default %d)\n", perhost_interval / 100 );
 	fprintf( stderr, "   -q         quiet (don't show per-target/per-ping results)\n" );
