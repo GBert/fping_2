@@ -1,4 +1,9 @@
-fping_2
-=======
+fping\_2
+========
 
-Jitter test with fping-2.4b2
+modified fping 2.4b2\_to with TOS handling (option -O)
+
+Prupose:
+--------
+
+does this version show different jitter valuse than fping3 ? 
